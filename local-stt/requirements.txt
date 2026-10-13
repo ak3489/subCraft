@@ -1,0 +1,7 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+python-dotenv>=1.0
+faster-whisper>=1.0.3
+# faster-whisper 目前传入 av.open(..., metadata_errors=...)，该参数在 av 19 中已移除
+av>=11,<19

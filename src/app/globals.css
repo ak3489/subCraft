@@ -1,0 +1,429 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 5%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 5%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 83.1%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+}
+
+/* Waveform animation for the processing view */
+@keyframes waveform {
+  0% {
+    height: 8px;
+    opacity: 0.4;
+  }
+
+  50% {
+    height: 40px;
+    opacity: 1;
+  }
+
+  100% {
+    height: 12px;
+    opacity: 0.5;
+  }
+}
+
+/* Floating background blobs */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(10px, -15px) scale(1.05);
+  }
+
+  66% {
+    transform: translate(-8px, 10px) scale(0.97);
+  }
+}
+
+/* Subtle glow pulse for waveform container */
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px hsl(var(--primary) / 0.15));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 20px hsl(var(--primary) / 0.3));
+  }
+}
+
+/* Shimmer effect for badges */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Cursor blink for subtitle simulator typing effect */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Mini equalizer bars for pill badge */
+@keyframes waveBar {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+
+  50% {
+    transform: scaleY(0.28);
+  }
+}
+
+/* Animated gradient text for hero */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.hero-gradient-text {
+  background: linear-gradient(
+    90deg,
+    #FF3B30,
+    #FF9500,
+    #C8D200,
+    #34C759,
+    #00BCD4,
+    #34C759,
+    #C8D200,
+    #FF9500,
+    #FF3B30
+  );
+  background-size: 300% 100%;
+  animation: gradient-shift 6s ease-in-out infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Hide scrollbar for horizontal scroll containers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ============================================================
+   Control Room — landing / import page
+   Scoped under .cr so the editor, processing and modal are untouched.
+   Palette: graphite + amber "on-air" signal + cyan scope.
+   ============================================================ */
+.cr {
+  --ink: #0B0D11;
+  --panel: #12161C;
+  --panel-2: #171C23;
+  --panel-3: #1E252E;
+  --line: #232B35;
+  --line-2: #333D49;
+  --fg: #E8EBEF;
+  --dim: #98A2B0;
+  --faint: #5D6772;
+  --signal: #F5A524;
+  --signal-2: #5FD3F3;
+  --rec: #FF5A5F;
+  --level: #5BD98C;
+
+  background: var(--ink);
+  color: var(--fg);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.cr-mono {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.cr-eyebrow {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--faint);
+}
+
+.cr-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  line-height: 1.1;
+  color: var(--faint);
+}
+
+.cr-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.cr-inset {
+  background: #0D1015;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.cr-btn {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.cr-focusable:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.cr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.015);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--dim);
+}
+
+.cr-chip-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--signal);
+  box-shadow: 0 0 0 3px rgba(245, 165, 36, 0.12);
+}
+
+.cr-grid-bg {
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 46px 46px;
+}
+
+.cr-fade-mask {
+  -webkit-mask-image: radial-gradient(ellipse 100% 78% at 50% 0%, #000 22%, transparent 80%);
+  mask-image: radial-gradient(ellipse 100% 78% at 50% 0%, #000 22%, transparent 80%);
+}
+
+.cr-dotgrid {
+  background-image: radial-gradient(var(--line-2) 1px, transparent 1.5px);
+  background-size: 14px 14px;
+}
+
+/* timeline ruler */
+.cr-ruler {
+  height: 18px;
+  background-image:
+    repeating-linear-gradient(to right, var(--line-2) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 12px);
+  background-repeat: repeat-x;
+  background-position: 0 100%, 0 100%;
+  background-size: 48px 62%, 12px 34%;
+}
+
+/* waveform level bars */
+@keyframes cr-level {
+  0%, 100% { transform: scaleY(0.16); }
+  50% { transform: scaleY(1); }
+}
+.cr-bar {
+  background: var(--line-2);
+  border-radius: 2px;
+  transform-origin: 50% 50%;
+  animation: cr-level 1.1s ease-in-out infinite;
+}
+.cr-waverow:hover .cr-bar { background: #46525F; }
+.cr-dragging .cr-bar { background: var(--signal); animation-duration: 0.5s; }
+.cr-dragging { background: rgba(245, 165, 36, 0.05); }
+
+/* sweeping playhead sheen */
+@keyframes cr-scan {
+  0% { transform: translateX(-40%); opacity: 0; }
+  12% { opacity: 0.7; }
+  88% { opacity: 0.7; }
+  100% { transform: translateX(140%); opacity: 0; }
+}
+.cr-scan { animation: cr-scan 4.5s linear infinite; }
+
+/* record tally dot */
+@keyframes cr-rec {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.28; }
+}
+.cr-rec-dot { animation: cr-rec 1.4s ease-in-out infinite; }
+
+/* signal travelling through the pipeline */
+@keyframes cr-flow {
+  0% { left: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+.cr-flow-dot {
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 999px;
+  background: var(--signal);
+  box-shadow: 0 0 8px var(--signal);
+  animation: cr-flow 3.6s ease-in-out infinite;
+}
+
+/* idle equalizer heartbeat */
+@keyframes cr-eq {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+.cr-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 14px;
+}
+.cr-eq > i {
+  width: 2px;
+  height: 100%;
+  background: var(--signal);
+  border-radius: 1px;
+  transform-origin: 50% 100%;
+  animation: cr-eq 1s ease-in-out infinite;
+}
+
+/* segmented level meter */
+.cr-meter {
+  display: inline-flex;
+  gap: 2px;
+}
+.cr-meter > i {
+  width: 4px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--line-2);
+}
+.cr-meter > i.on { background: var(--signal); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cr *,
+  .cr *::before,
+  .cr *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* settings section highlight when a nav item is clicked
+   (gives feedback even when the panel is short enough not to scroll) */
+@keyframes settings-flash {
+  0% {
+    border-color: hsl(var(--border));
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  }
+  12% {
+    border-color: hsl(var(--primary) / 0.55);
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12);
+  }
+  100% {
+    border-color: hsl(var(--border));
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  }
+}
+.settings-flash {
+  animation: settings-flash 1.1s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-flash {
+    animation-duration: 0.001ms !important;
+  }
+}

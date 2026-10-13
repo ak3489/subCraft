@@ -1,0 +1,49 @@
+services:
+  substudio:
+    build:
+      context: .
+      args:
+        # 构建时内联，用于 OG 图片 / sitemap 的绝对链接
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+    image: substudio
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # 语音识别：默认指向本地 Whisper 服务；也可改为在线供应商
+      TRANSCRIBE_BASE_URL: ${TRANSCRIBE_BASE_URL:-http://local-stt:8000/v1}
+      TRANSCRIBE_MODEL: ${TRANSCRIBE_MODEL:-large-v3}
+      TRANSCRIBE_API_KEY: ${TRANSCRIBE_API_KEY:-}
+      # 字幕翻译（可选）
+      TRANSLATE_BASE_URL: ${TRANSLATE_BASE_URL:-}
+      TRANSLATE_API_KEY: ${TRANSLATE_API_KEY:-}
+      TRANSLATE_MODEL: ${TRANSLATE_MODEL:-}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+    volumes:
+      # 处理过程中的临时文件，挂载卷可在重启后保留
+      - substudio-data:/data
+    depends_on:
+      - local-stt
+    # 如需自定义 nginx 上传体积，请确保 client_max_body_size 大于 500m
+
+  # 本地 Whisper 语音识别服务（可选）。CPU 上 large-v3 较慢，
+  # 有 GPU 可改用 nvidia 运行时并设置 STT_DEVICE=cuda。
+  local-stt:
+    build:
+      context: ./local-stt
+    image: local-stt
+    restart: unless-stopped
+    environment:
+      STT_MODEL: ${STT_MODEL:-large-v3}
+      STT_DEVICE: ${STT_DEVICE:-cpu}
+      STT_COMPUTE_TYPE: ${STT_COMPUTE_TYPE:-int8}
+      STT_MODELS_DIR: /models
+    volumes:
+      - whisper-models:/models
+    # 默认不对外暴露，仅供 substudio 容器内网访问；如需本机调试可取消注释
+    # ports:
+    #   - "8000:8000"
+
+volumes:
+  substudio-data:
+  whisper-models:

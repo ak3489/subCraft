@@ -1,0 +1,6 @@
+# local-stt service
+.venv
+__pycache__
+*.pyc
+models
+.env
