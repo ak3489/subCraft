@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useDropzone } from "react-dropzone";
 import { MotionConfig, motion } from "framer-motion";
 import {
@@ -537,6 +538,9 @@ export default function ImportView({ onNext, setVideoFile, setMediaUrl, setIsSam
                         </div>
 
                         <div className="flex items-center gap-5 cr-mono text-xs" style={{ color: "var(--faint)" }}>
+                            <Link href="/guide" className="cr-focusable transition-colors hover:text-[var(--dim)]">
+                                使用说明
+                            </Link>
                             <span>TC {tc}</span>
                             <span>© {year}</span>
                         </div>

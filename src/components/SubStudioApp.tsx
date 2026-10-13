@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import ImportView from "./ImportView";
@@ -8,7 +9,7 @@ import ProcessingView from "./ProcessingView";
 import EditorView from "./EditorView";
 import Logo from "./Logo";
 import SettingsView from "./SettingsView";
-import { KeyRound, History, Check, Trash2, Clock, Plus, Sparkles } from "lucide-react";
+import { KeyRound, History, Check, Trash2, Clock, Plus, Sparkles, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Tooltip from "./Tooltip";
 import { hasApiKey as detectApiKey, isLocalMode } from "@/lib/api-config";
@@ -450,6 +451,16 @@ export default function SubStudioApp() {
                                 )} />
                             )}
                         </button>
+                    </Tooltip>
+
+                    <Tooltip label="使用说明">
+                        <Link
+                            href="/guide"
+                            aria-label="使用说明"
+                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-lg transition-all duration-200"
+                        >
+                            <BookOpen className="w-[18px] h-[18px]" />
+                        </Link>
                     </Tooltip>
                 </div>
             </motion.header>
