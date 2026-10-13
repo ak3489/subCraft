@@ -9,6 +9,53 @@ export const dynamic = 'force-dynamic';
 
 const limiter = rateLimit({ interval: 60_000, limit: 30 });
 
+/**
+ * 把文件流包装成 Web ReadableStream。
+ * 关键点：当客户端提前中断（如视频拖动进度条、关闭页面）时，消费端会 cancel，
+ * 这里要 destroy 底层 fs 流并吞掉“向已关闭 controller enqueue”的异常，
+ * 否则会抛出 ERR_INVALID_STATE 变成 uncaughtException。
+ */
+function createFileWebStream(fsPath: string, range?: { start: number; end: number }) {
+    const fileStream = fs.createReadStream(fsPath, range);
+    let done = false;
+
+    return new ReadableStream<Uint8Array>({
+        start(controller) {
+            fileStream.on('data', (chunk: Buffer | string) => {
+                if (done) return;
+                try {
+                    controller.enqueue(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+                } catch {
+                    done = true;
+                    fileStream.destroy();
+                }
+            });
+            fileStream.on('end', () => {
+                if (done) return;
+                done = true;
+                try {
+                    controller.close();
+                } catch {
+                    /* 已关闭 */
+                }
+            });
+            fileStream.on('error', (err) => {
+                if (done) return;
+                done = true;
+                try {
+                    controller.error(err);
+                } catch {
+                    /* 已关闭 */
+                }
+            });
+        },
+        cancel() {
+            done = true;
+            fileStream.destroy();
+        },
+    });
+}
+
 export async function GET(req: NextRequest) {
     try {
         const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
@@ -77,14 +124,7 @@ export async function GET(req: NextRequest) {
             const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
             const chunkSize = end - start + 1;
 
-            const fileStream = fs.createReadStream(mediaPath, { start, end });
-            const readable = new ReadableStream({
-                start(controller) {
-                    fileStream.on('data', (chunk: Buffer | string) => controller.enqueue(typeof chunk === 'string' ? Buffer.from(chunk) : chunk));
-                    fileStream.on('end', () => controller.close());
-                    fileStream.on('error', (err) => controller.error(err));
-                },
-            });
+            const readable = createFileWebStream(mediaPath, { start, end });
 
             return new NextResponse(readable, {
                 status: 206,
@@ -98,14 +138,7 @@ export async function GET(req: NextRequest) {
         }
 
         // Stream the full file instead of loading it all into memory
-        const fileStream = fs.createReadStream(mediaPath);
-        const readable = new ReadableStream({
-            start(controller) {
-                fileStream.on('data', (chunk: Buffer | string) => controller.enqueue(typeof chunk === 'string' ? Buffer.from(chunk) : chunk));
-                fileStream.on('end', () => controller.close());
-                fileStream.on('error', (err) => controller.error(err));
-            },
-        });
+        const readable = createFileWebStream(mediaPath);
 
         return new NextResponse(readable, {
             headers: {

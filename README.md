@@ -180,6 +180,29 @@ NODE_ENV=production FFMPEG_PATH=/usr/bin/ffmpeg npm run start
 **性能建议**：CPU 上 `large-v3` 约为音频时长的数倍，建议先用 `small`/`medium`/`large-v3-turbo`；
 有 NVIDIA 显卡时设 `STT_DEVICE=cuda`、`STT_COMPUTE_TYPE=float16` 会快很多，并在 Docker 中启用 GPU。
 
+### 模型从哪来？会联网 / 访问 Hugging Face 吗？
+
+**本地模式 ≠ 离线**。识别本身在本机完成（不需要 API Key、音频不出本机），但**模型权重文件托管在 Hugging Face 上**。
+第一次加载某个模型时，faster-whisper 会通过 `huggingface_hub` 去 `https://huggingface.co` 下载，日志里会出现类似下面的请求，属**正常现象**：
+
+```
+INFO HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-<模型>/revision/main "HTTP/1.1 200 OK"
+INFO HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-<模型>/tree/<revision>?... "HTTP/1.1 200 OK"
+```
+
+- 下载后会缓存到 `STT_MODELS_DIR`（默认 `local-stt/models`），之后再用**同一模型直接读本地、不再联网**。
+- 只有换模型、改 revision 或清空缓存时才会重新联网。
+- 如果你看到的是 `200 OK`，说明本机能正常访问 Hugging Face，无需额外处理；出现 `ReadTimeout` / 连接失败才是网络问题。
+
+**访问 Hugging Face 慢 / 超时 / 被墙时**（任选其一）：
+
+1. **国内镜像（推荐）**：在 `local-stt/.env` 里设 `HF_ENDPOINT=https://hf-mirror.com`，
+   或在启动服务前临时设置 —— Windows `$env:HF_ENDPOINT="https://hf-mirror.com"`，
+   macOS/Linux `export HF_ENDPOINT=https://hf-mirror.com`，然后重启服务。`huggingface_hub` 会自动走镜像。
+   Docker Compose 中给 `local-stt` 服务加环境变量 `HF_ENDPOINT: https://hf-mirror.com` 即可。
+2. **走代理**：设置 `HTTP_PROXY` / `HTTPS_PROXY` 环境变量。
+3. **完全离线**：提前手动下载模型文件放进 `STT_MODELS_DIR` 指向的目录，即可离线使用。
+
 ---
 
 ## FFmpeg 说明
@@ -296,8 +319,9 @@ cuda/int8 等用 `STT_DEVICE`/`STT_COMPUTE_TYPE`。详见 [本地 Whisper 模型
 只有「在线接口」模式需要 Key；「本地 Whisper」模式完全不需要，音频不出本机。
 
 **Q5：首次识别很慢 / 卡在下载？**
-首次会从 HuggingFace 下载模型（`large-v3` 约 1.5GB）。国内可设 `HF_ENDPOINT=https://hf-mirror.com`。
-CPU 上 `large-v3` 本身也慢，建议换 `small`/`medium`/`large-v3-turbo`。
+本地模式首次会从 Hugging Face 下载模型（`large-v3` 约 1.5GB），属正常现象；下载后缓存到 `STT_MODELS_DIR` 不再联网。
+国内可设 `HF_ENDPOINT=https://hf-mirror.com`。CPU 上 `large-v3` 本身也慢，建议换 `small`/`medium`/`large-v3-turbo`。
+详见 [模型从哪来？会联网 / 访问 Hugging Face 吗](#模型从哪来会联网--访问-hugging-face-吗)。
 
 **Q6：报错 `open() got an unexpected keyword argument 'metadata_errors'`？**
 PyAV 19 的破坏性变更，`local-stt/requirements.txt` 已用 `av<19` 规避；手动装过 `av` 的话执行 `pip install "av<19"`。

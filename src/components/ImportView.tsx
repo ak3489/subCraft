@@ -53,7 +53,9 @@ function waveHeights(n: number) {
     const out: number[] = [];
     for (let i = 0; i < n; i++) {
         const v = Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.53)) * 0.82 + 0.14;
-        out.push(Math.min(1, Math.max(0.12, v)));
+        // 四舍五入到固定精度：Math.sin/cos 在不同 V8 版本可能差最后一位，
+        // 不取整会导致 SSR 与客户端水合时的 style 不一致（hydration warning）。
+        out.push(Number(Math.min(1, Math.max(0.12, v)).toFixed(4)));
     }
     return out;
 }
@@ -307,7 +309,7 @@ export default function ImportView({ onNext, setVideoFile, setMediaUrl, setIsSam
                                             key={i}
                                             className="cr-bar w-[3px] flex-none"
                                             style={{
-                                                height: `${h * 100}%`,
+                                                height: `${(h * 100).toFixed(2)}%`,
                                                 animationDelay: `${(i % 12) * 0.07}s`,
                                                 animationDuration: `${0.9 + (i % 5) * 0.09}s`,
                                             }}
