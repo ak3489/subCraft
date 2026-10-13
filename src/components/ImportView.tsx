@@ -369,7 +369,7 @@ export default function ImportView({ onNext, setVideoFile, setMediaUrl, setIsSam
                                         className="cr-btn cr-focusable inline-flex items-center justify-center gap-2 px-6 py-3 text-[#0B0D11] transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                                         style={{ background: "var(--signal)" }}
                                     >
-                                        Ingest
+                                        导入
                                         <ArrowRight className="w-4 h-4" />
                                     </motion.button>
                                 </form>
