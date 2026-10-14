@@ -158,17 +158,67 @@ NODE_ENV=production FFMPEG_PATH=/usr/bin/ffmpeg npm run start
 
 > 也就是说：模型名由网页里填的那个决定；服务端 `STT_MODEL` 只是兜底。
 
-**常用模型**（faster-whisper 支持的标准名）：
+### 可用的 Whisper 版本（可下载）
 
-| 模型 | 体积 | 速度 | 适用 |
-| --- | --- | --- | --- |
-| `tiny` | ~75MB | 最快 | 测试、低配机 |
-| `base` / `small` | ~150/500MB | 快 | 日常、CPU 首选 |
-| `medium` | ~1.5GB | 中 | 质量与速度平衡 |
-| `large-v3` | ~3GB | 慢 | 最高质量（默认） |
-| `large-v3-turbo` | ~1.6GB | 较快 | 接近 large 质量、速度快很多 |
+本地识别基于 [faster-whisper](https://github.com/SYSTRAN/faster-whisper)。下表是它内置支持的全部短名，
+可直接填进网页「模型名称」或服务端 `STT_MODEL`（短名会自动映射到对应的 Hugging Face 仓库）：
 
-也可以填 HuggingFace 上的 CTranslate2 仓库名，例如 `deepdml/faster-whisper-large-v3-turbo-ct2`。
+| 短名 | Hugging Face 仓库 | 体积 | 语言 | 说明 |
+| --- | --- | --- | --- | --- |
+| `tiny` | `Systran/faster-whisper-tiny` | ~75MB | 多语 | 最快，测试 / 低配机 |
+| `tiny.en` | `Systran/faster-whisper-tiny.en` | ~75MB | 仅英文 | |
+| `base` | `Systran/faster-whisper-base` | ~145MB | 多语 | |
+| `base.en` | `Systran/faster-whisper-base.en` | ~145MB | 仅英文 | |
+| `small` | `Systran/faster-whisper-small` | ~480MB | 多语 | CPU 日常首选 |
+| `small.en` | `Systran/faster-whisper-small.en` | ~480MB | 仅英文 | |
+| `medium` | `Systran/faster-whisper-medium` | ~1.5GB | 多语 | 质量 / 速度平衡 |
+| `medium.en` | `Systran/faster-whisper-medium.en` | ~1.5GB | 仅英文 | |
+| `large-v1` | `Systran/faster-whisper-large-v1` | ~3GB | 多语 | 旧版 |
+| `large-v2` | `Systran/faster-whisper-large-v2` | ~3GB | 多语 | |
+| `large-v3` / `large` | `Systran/faster-whisper-large-v3` | ~3GB | 多语 | 质量最高（默认） |
+| `large-v3-turbo` / `turbo` | `mobiuslabsgmbh/faster-whisper-large-v3-turbo` | ~1.6GB | 多语 | 接近 large、快很多 |
+| `distil-small.en` | `Systran/faster-distil-whisper-small.en` | ~350MB | 仅英文 | 蒸馏加速 |
+| `distil-medium.en` | `Systran/faster-distil-whisper-medium.en` | ~800MB | 仅英文 | 蒸馏加速 |
+| `distil-large-v2` | `Systran/faster-distil-whisper-large-v2` | ~1.5GB | 仅英文 | 蒸馏加速 |
+| `distil-large-v3` | `Systran/faster-distil-whisper-large-v3` | ~1.5GB | 仅英文 | 蒸馏，英文推荐 |
+| `distil-large-v3.5` | `distil-whisper/distil-large-v3.5-ct2` | ~1.5GB | 仅英文 | 最新蒸馏 |
+
+> - 带 `.en` 与 `distil-*` 的模型**只针对英文**优化；中文等其他语言请用多语版本（如 `small` / `medium` / `large-v3`）。
+> - 短名映射来自 faster-whisper 的 `_MODELS` 表，随库版本略有增减；填完整 Hugging Face 仓库名可绕开短名限制。
+
+### 模型在哪里下载
+
+- **来源**：模型权重托管在 **Hugging Face** 上，格式为 **CTranslate2（CT2）**。它与 OpenAI 原始的
+  `openai/whisper-*`（`.pt` 格式）**不通用**，必须是 CT2 转换版。
+- **位置**：首次使用某模型时，`huggingface_hub` 会自动从 `https://huggingface.co` 下载，并缓存到
+  `STT_MODELS_DIR`（默认 `local-stt/models`，Docker 里是 `/models` 卷）。
+- **是否联网**：下载后**同一模型不再联网**；只有换模型、改 revision 或清缓存时才会重新下载。
+- **也可以填仓库名**：任何 Hugging Face 上的 CT2 仓库都行，例如 `deepdml/faster-whisper-large-v3-turbo-ct2`。
+- 日志里出现 `GET https://huggingface.co/api/models/Systran/faster-whisper-<模型>/...` 的请求属**正常现象**，
+  返回 `200 OK` 即表示网络正常。
+
+**⚠️ 国内网络提示（重要）**：`huggingface.co` 在国内常常**访问不通畅（超时 / 很慢）**，
+首次下载模型前建议先按下面任一方式解决，否则会一直卡在下载。任选其一：
+
+1. **国内镜像（推荐）**：设 `HF_ENDPOINT=https://hf-mirror.com` —— 在 `local-stt/.env` 里加一行，
+   或启动服务前临时设置（Windows `$env:HF_ENDPOINT="https://hf-mirror.com"`，macOS/Linux
+   `export HF_ENDPOINT=https://hf-mirror.com`），重启服务即可；`huggingface_hub` 会自动走镜像。
+   Docker Compose 中给 `local-stt` 服务加环境变量 `HF_ENDPOINT: https://hf-mirror.com` 即可。
+2. **走代理**：设置 `HTTP_PROXY` / `HTTPS_PROXY` 环境变量。
+3. **手动下载后离线使用**（镜像 / 内网都适用）：
+
+   ```bash
+   HF_ENDPOINT=https://hf-mirror.com huggingface-cli download Systran/faster-whisper-large-v3 --local-dir <目录>
+   ```
+
+   注意：**必须下整份**，关键文件 `config.json`、`model.bin`、`preprocessor_config.json`、
+   `tokenizer.json`、`vocabulary.json` 缺一不可；下好后把网页「模型名称」/ `STT_MODEL` 填成**该目录路径**，
+   或按 HF 缓存结构放进 `STT_MODELS_DIR`。
+
+> 补充：仓库要选 **CT2 格式**的（`Systran/faster-whisper-*`、`Systran/faster-distil-whisper-*`、
+> `mobiuslabsgmbh/faster-whisper-large-v3-turbo` 等），**不要用 `openai/whisper-*`**——那是 PyTorch 格式，
+> faster-whisper 用不了。另外网页「模型名称」/ `STT_MODEL` 也可以直接填**完整仓库名**
+> （如 `Systran/faster-whisper-large-v3`），效果与短名一致。
 
 **设备与精度**（`local-stt/.env`）：
 
@@ -179,29 +229,6 @@ NODE_ENV=production FFMPEG_PATH=/usr/bin/ffmpeg npm run start
 
 **性能建议**：CPU 上 `large-v3` 约为音频时长的数倍，建议先用 `small`/`medium`/`large-v3-turbo`；
 有 NVIDIA 显卡时设 `STT_DEVICE=cuda`、`STT_COMPUTE_TYPE=float16` 会快很多，并在 Docker 中启用 GPU。
-
-### 模型从哪来？会联网 / 访问 Hugging Face 吗？
-
-**本地模式 ≠ 离线**。识别本身在本机完成（不需要 API Key、音频不出本机），但**模型权重文件托管在 Hugging Face 上**。
-第一次加载某个模型时，faster-whisper 会通过 `huggingface_hub` 去 `https://huggingface.co` 下载，日志里会出现类似下面的请求，属**正常现象**：
-
-```
-INFO HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-<模型>/revision/main "HTTP/1.1 200 OK"
-INFO HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-<模型>/tree/<revision>?... "HTTP/1.1 200 OK"
-```
-
-- 下载后会缓存到 `STT_MODELS_DIR`（默认 `local-stt/models`），之后再用**同一模型直接读本地、不再联网**。
-- 只有换模型、改 revision 或清空缓存时才会重新联网。
-- 如果你看到的是 `200 OK`，说明本机能正常访问 Hugging Face，无需额外处理；出现 `ReadTimeout` / 连接失败才是网络问题。
-
-**访问 Hugging Face 慢 / 超时 / 被墙时**（任选其一）：
-
-1. **国内镜像（推荐）**：在 `local-stt/.env` 里设 `HF_ENDPOINT=https://hf-mirror.com`，
-   或在启动服务前临时设置 —— Windows `$env:HF_ENDPOINT="https://hf-mirror.com"`，
-   macOS/Linux `export HF_ENDPOINT=https://hf-mirror.com`，然后重启服务。`huggingface_hub` 会自动走镜像。
-   Docker Compose 中给 `local-stt` 服务加环境变量 `HF_ENDPOINT: https://hf-mirror.com` 即可。
-2. **走代理**：设置 `HTTP_PROXY` / `HTTPS_PROXY` 环境变量。
-3. **完全离线**：提前手动下载模型文件放进 `STT_MODELS_DIR` 指向的目录，即可离线使用。
 
 ---
 
@@ -321,12 +348,17 @@ cuda/int8 等用 `STT_DEVICE`/`STT_COMPUTE_TYPE`。详见 [本地 Whisper 模型
 **Q5：首次识别很慢 / 卡在下载？**
 本地模式首次会从 Hugging Face 下载模型（`large-v3` 约 1.5GB），属正常现象；下载后缓存到 `STT_MODELS_DIR` 不再联网。
 国内可设 `HF_ENDPOINT=https://hf-mirror.com`。CPU 上 `large-v3` 本身也慢，建议换 `small`/`medium`/`large-v3-turbo`。
-详见 [模型从哪来？会联网 / 访问 Hugging Face 吗](#模型从哪来会联网--访问-hugging-face-吗)。
+详见 [模型在哪里下载](#模型在哪里下载)。
 
-**Q6：报错 `open() got an unexpected keyword argument 'metadata_errors'`？**
+**Q6：支持哪些 Whisper 模型版本？**
+faster-whisper 支持的短名有 `tiny` / `base` / `small` / `medium` / `large-v1` / `large-v2` / `large-v3` / `large-v3-turbo`
+（另有 `.en` 英文版与 `distil-*` 蒸馏版）。完整列表与对应的 Hugging Face 仓库见
+[可用的 Whisper 版本](#可用的-whisper-版本可下载)。
+
+**Q7：报错 `open() got an unexpected keyword argument 'metadata_errors'`？**
 PyAV 19 的破坏性变更，`local-stt/requirements.txt` 已用 `av<19` 规避；手动装过 `av` 的话执行 `pip install "av<19"`。
 
-**Q7：Docker 里 Web 怎么连到本地 Whisper？**
+**Q8：Docker 里 Web 怎么连到本地 Whisper？**
 Compose 中 Web 默认 `TRANSCRIBE_BASE_URL=http://local-stt:8000/v1`（容器内网服务名）。
 
 ---

@@ -34,6 +34,26 @@ const TOC = [
     { id: "faq", label: "常见问题" },
 ];
 
+const WHISPER_MODELS: { name: string; size: string; lang: string; note: string }[] = [
+    { name: "tiny", size: "~75MB", lang: "多语", note: "最快，测试 / 低配机" },
+    { name: "tiny.en", size: "~75MB", lang: "仅英文", note: "" },
+    { name: "base", size: "~145MB", lang: "多语", note: "" },
+    { name: "base.en", size: "~145MB", lang: "仅英文", note: "" },
+    { name: "small", size: "~480MB", lang: "多语", note: "CPU 日常首选" },
+    { name: "small.en", size: "~480MB", lang: "仅英文", note: "" },
+    { name: "medium", size: "~1.5GB", lang: "多语", note: "质量 / 速度平衡" },
+    { name: "medium.en", size: "~1.5GB", lang: "仅英文", note: "" },
+    { name: "large-v1", size: "~3GB", lang: "多语", note: "旧版" },
+    { name: "large-v2", size: "~3GB", lang: "多语", note: "" },
+    { name: "large-v3 / large", size: "~3GB", lang: "多语", note: "质量最高（默认）" },
+    { name: "large-v3-turbo / turbo", size: "~1.6GB", lang: "多语", note: "接近 large、快很多" },
+    { name: "distil-small.en", size: "~350MB", lang: "仅英文", note: "蒸馏加速" },
+    { name: "distil-medium.en", size: "~800MB", lang: "仅英文", note: "蒸馏加速" },
+    { name: "distil-large-v2", size: "~1.5GB", lang: "仅英文", note: "蒸馏加速" },
+    { name: "distil-large-v3", size: "~1.5GB", lang: "仅英文", note: "蒸馏，英文推荐" },
+    { name: "distil-large-v3.5", size: "~1.5GB", lang: "仅英文", note: "最新蒸馏" },
+];
+
 function Code({ children }: { children: string }) {
     return (
         <pre className="cr-inset cr-mono mt-3 overflow-x-auto px-4 py-3 text-[12.5px] leading-relaxed text-[var(--fg)]">
@@ -276,25 +296,90 @@ uvicorn server:app --host 0.0.0.0 --port 8000`}</Code>
                                 <Step n={3}>上传视频即可。</Step>
                             </div>
                         </div>
-                        <div className="cr-panel px-4 py-3">
-                            <div className="flex items-center gap-2">
+                        <div className="cr-panel overflow-hidden">
+                            <div className="flex items-center gap-2 border-b border-[var(--line)] bg-[var(--panel-2)] px-4 py-3">
                                 <ServerCog className="h-4 w-4" style={{ color: "var(--signal)" }} />
-                                <span className="text-[13px] text-[var(--fg)]">模型下载与 Hugging Face</span>
+                                <span className="text-[13px] text-[var(--fg)]">模型从哪里下载</span>
                             </div>
-                            <p className="mt-1.5 text-[13.5px]">
-                                本地模式不等于离线：首次加载某个模型时会从 Hugging Face 下载权重，之后缓存到
-                                <Inline>STT_MODELS_DIR</Inline>（默认 <Inline>./models</Inline>），同一模型不再联网。
-                                国内下载慢可设镜像：
-                            </p>
-                            <Code>{`# Windows (PowerShell)
+                            <div className="px-4 py-4">
+                                <ul className="space-y-2.5">
+                                    <Bullet>
+                                        权重托管在 <b className="text-[var(--fg)]">Hugging Face</b>，格式为
+                                        <b className="text-[var(--fg)]">CTranslate2（CT2）</b>；与 OpenAI 原始的
+                                        <Inline>openai/whisper-*</Inline>（<Inline>.pt</Inline>）<b className="text-[var(--fg)]">不通用</b>。
+                                    </Bullet>
+                                    <Bullet>
+                                        首次使用某模型时自动从 <Inline>https://huggingface.co</Inline> 下载，缓存到
+                                        <Inline>STT_MODELS_DIR</Inline>（默认 <Inline>local-stt/models</Inline>，Docker 为
+                                        <Inline>/models</Inline> 卷）。
+                                    </Bullet>
+                                    <Bullet>
+                                        下载后<b className="text-[var(--fg)]">同一模型不再联网</b>；换模型 / 改 revision / 清缓存才会重新下载。
+                                    </Bullet>
+                                    <Bullet>
+                                        短名 <Inline>large-v3</Inline> 自动映射到 <Inline>Systran/faster-whisper-large-v3</Inline>；
+                                        也可直接填任意 HF 上的 CT2 仓库名（如 <Inline>deepdml/faster-whisper-large-v3-turbo-ct2</Inline>）。
+                                    </Bullet>
+                                </ul>
+
+                                <div className="cr-label mt-5 mb-2">可下载的模型版本</div>
+                                <div className="cr-inset overflow-x-auto">
+                                    <table className="w-full text-left text-[13px]">
+                                        <thead>
+                                            <tr className="cr-label border-b border-[var(--line)]">
+                                                <th className="px-3 py-2 font-normal">短名</th>
+                                                <th className="px-3 py-2 font-normal">体积</th>
+                                                <th className="px-3 py-2 font-normal">语言</th>
+                                                <th className="px-3 py-2 font-normal">说明</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {WHISPER_MODELS.map((m) => (
+                                                <tr key={m.name} className="border-t border-[var(--line)]">
+                                                    <td className="cr-mono whitespace-nowrap px-3 py-2" style={{ color: "var(--signal-2)" }}>
+                                                        {m.name}
+                                                    </td>
+                                                    <td className="cr-mono whitespace-nowrap px-3 py-2 text-[var(--dim)]">{m.size}</td>
+                                                    <td className="whitespace-nowrap px-3 py-2 text-[var(--dim)]">{m.lang}</td>
+                                                    <td className="px-3 py-2 text-[var(--dim)]">{m.note || "—"}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p className="mt-2 text-[12.5px] text-[var(--dim)]">
+                                    带 <Inline>.en</Inline> 与 <Inline>distil-*</Inline> 的模型只针对英文优化；中文等其他语言请用多语版本。
+                                </p>
+
+                                <div className="cr-label mt-5 mb-2">国内网络提示（重要）</div>
+                                <p className="text-[13.5px]">
+                                    <Inline>huggingface.co</Inline> 在国内常常
+                                    <b className="text-[var(--fg)]">访问不通畅（超时 / 很慢）</b>。首次下载模型前，
+                                    建议先设国内镜像 <Inline>HF_ENDPOINT=https://hf-mirror.com</Inline>
+                                    （<Inline>local-stt/.env</Inline> 加一行，或启动前临时设置）：
+                                </p>
+                                <Code>{`# Windows (PowerShell)
 $env:HF_ENDPOINT="https://hf-mirror.com"; uvicorn server:app --host 0.0.0.0 --port 8000
 # macOS / Linux
 HF_ENDPOINT=https://hf-mirror.com uvicorn server:app --host 0.0.0.0 --port 8000`}</Code>
-                            <p className="mt-3 text-[13.5px]">
-                                性能：CPU 上 <Inline>large-v3</Inline> 较慢，建议先用 <Inline>small</Inline> /
-                                <Inline>medium</Inline> / <Inline>large-v3-turbo</Inline>；有 NVIDIA 显卡时设
-                                <Inline>STT_DEVICE=cuda</Inline>、<Inline>STT_COMPUTE_TYPE=float16</Inline> 会快很多。
-                            </p>
+                                <p className="mt-3 text-[13.5px]">
+                                    也可以设 <Inline>HTTP_PROXY</Inline> / <Inline>HTTPS_PROXY</Inline> 走代理；
+                                    或手动下好后离线使用（镜像 / 内网都适用）：
+                                </p>
+                                <Code>{`HF_ENDPOINT=https://hf-mirror.com huggingface-cli download Systran/faster-whisper-large-v3 --local-dir <目录>`}</Code>
+                                <p className="mt-2 text-[13.5px]">
+                                    离线时注意：<b className="text-[var(--fg)]">必须下整份</b>（<Inline>config.json</Inline> /
+                                    <Inline>model.bin</Inline> / <Inline>preprocessor_config.json</Inline> /
+                                    <Inline>tokenizer.json</Inline> / <Inline>vocabulary.json</Inline> 缺一不可），
+                                    下好后把网页「模型名称」/ <Inline>STT_MODEL</Inline> 填成该
+                                    <b className="text-[var(--fg)]">目录路径</b>，或按 HF 缓存结构放进 <Inline>STT_MODELS_DIR</Inline>。
+                                </p>
+                                <p className="mt-3 text-[13.5px]">
+                                    性能：CPU 上 <Inline>large-v3</Inline> 较慢，建议先用 <Inline>small</Inline> /
+                                    <Inline>medium</Inline> / <Inline>large-v3-turbo</Inline>；有 NVIDIA 显卡时设
+                                    <Inline>STT_DEVICE=cuda</Inline>、<Inline>STT_COMPUTE_TYPE=float16</Inline> 会快很多。
+                                </p>
+                            </div>
                         </div>
                     </Section>
 
@@ -436,6 +521,12 @@ npm run start      # 默认监听 3000`}</Code>
                         <Faq q="FFmpeg 需要单独安装吗？">
                             不需要用 npm 装。系统 <Inline>PATH</Inline> 里有 <Inline>ffmpeg</Inline> 即可；想强制指定就设
                             <Inline>FFMPEG_PATH</Inline>。Docker 镜像内已自带。
+                        </Faq>
+                        <Faq q="支持哪些 Whisper 模型版本？下载到哪？">
+                            faster-whisper 支持 <Inline>tiny</Inline> / <Inline>base</Inline> / <Inline>small</Inline> /
+                            <Inline>medium</Inline> / <Inline>large-v1~v3</Inline> / <Inline>large-v3-turbo</Inline>
+                            及 <Inline>.en</Inline>、<Inline>distil-*</Inline> 等版本；权重来自 Hugging Face（CT2 格式），
+                            缓存在 <Inline>STT_MODELS_DIR</Inline>。完整列表见上方「本地 Whisper 服务 → 可下载的模型版本」。
                         </Faq>
                         <Faq q="首次识别很慢 / 卡在下载？">
                             首次会从 Hugging Face 下载模型（large-v3 约 1.5GB），属正常现象；下载后缓存不再联网。
