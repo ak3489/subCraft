@@ -60,8 +60,8 @@
 **第 1 步：安装 Web 依赖**
 
 ```bash
-git clone https://github.com/Luffixos/ai-subtitles.git
-cd ai-subtitles
+git clone https://github.com/ak3489/subCraft.git
+cd subCraft
 npm install
 cp .env.example .env   # 可全部留空，本地 Whisper 模式不需要任何 Key
 ```
